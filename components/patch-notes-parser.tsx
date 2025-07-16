@@ -13,66 +13,121 @@ import { Search, Filter, TrendingUp, TrendingDown, Target, Shield, Zap, Cpu, Wre
 interface Change {
   type: 'buff' | 'nerf' | 'rework' | 'change' | 'new'
   description: string
+  examples?: string[]
+  new_stats?: Record<string, any>
 }
 
 interface PatchSection {
   id: string
   title: string
-  category: 'weapons' | 'abilities' | 'exotics' | 'systems' | 'armor'
+  category: 'weapons' | 'abilities' | 'exotics' | 'systems' | 'armor' | 'features'
   changes: Change[]
+  description?: string
+  components?: any
 }
 
 interface PatchData {
-  systemic_changes: Record<string, { title: string; changes: Change[] }>
-  weapon_archetypes: Record<string, { changes: Change[] }>
-  weapon_perks: Record<string, { changes: Change[] }>
-  exotic_weapons: Record<string, { changes: Change[] }>
-  abilities: Record<string, any>
-  exotic_armor: Record<string, any>
+  new_features?: Record<string, any>
+  systemic_changes?: Record<string, { title: string; changes: Change[] }>
+  weapon_archetypes?: Record<string, { changes: Change[] }>
+  weapon_perks?: Record<string, { changes: Change[] }>
+  weapon_perk_changes?: Record<string, { changes: Change[] }>
+  exotic_weapons?: Record<string, { changes: Change[] }>
+  exotic_weapon_changes?: Record<string, { changes: Change[] }>
+  abilities?: Record<string, any>
+  ability_changes?: Record<string, any>
+  exotic_armor?: Record<string, any>
+  exotic_armor_changes?: Record<string, any>
 }
 
 function transformData(data: PatchData): PatchSection[] {
   const sections: PatchSection[] = []
 
-  // Systemic changes
-  Object.entries(data.systemic_changes).forEach(([key, value]) => {
-    sections.push({
-      id: key,
-      title: value.title,
-      category: 'systems',
-      changes: value.changes
+  // New features
+  if (data.new_features) {
+    Object.entries(data.new_features).forEach(([key, value]) => {
+      sections.push({
+        id: `feature-${key}`,
+        title: value.title,
+        category: 'features',
+        description: value.description,
+        components: value.components,
+        changes: [{ type: 'new', description: value.description }]
+      })
     })
-  })
+  }
+
+  // Systemic changes
+  if (data.systemic_changes) {
+    Object.entries(data.systemic_changes).forEach(([key, value]) => {
+      sections.push({
+        id: key,
+        title: value.title,
+        category: 'systems',
+        changes: value.changes
+      })
+    })
+  }
 
   // Weapon archetypes
-  Object.entries(data.weapon_archetypes).forEach(([key, value]) => {
-    sections.push({
-      id: `archetype-${key}`,
-      title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      category: 'weapons',
-      changes: value.changes
+  if (data.weapon_archetypes) {
+    Object.entries(data.weapon_archetypes).forEach(([key, value]) => {
+      sections.push({
+        id: `archetype-${key}`,
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        category: 'weapons',
+        changes: value.changes
+      })
     })
-  })
+  }
 
   // Weapon perks
-  Object.entries(data.weapon_perks).forEach(([key, value]) => {
-    sections.push({
-      id: `perk-${key}`,
-      title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      category: 'weapons',
-      changes: value.changes
+  if (data.weapon_perks) {
+    Object.entries(data.weapon_perks).forEach(([key, value]) => {
+      sections.push({
+        id: `perk-${key}`,
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        category: 'weapons',
+        changes: value.changes
+      })
     })
-  })
+  }
+
+  // Weapon perk changes
+  if (data.weapon_perk_changes) {
+    Object.entries(data.weapon_perk_changes).forEach(([key, value]) => {
+      sections.push({
+        id: `perk-${key}`,
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        category: 'weapons',
+        changes: value.changes
+      })
+    })
+  }
 
   // Exotic weapons
-  Object.entries(data.exotic_weapons).forEach(([key, value]) => {
-    sections.push({
-      id: `exotic-${key}`,
-      title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      category: 'exotics',
-      changes: value.changes
+  if (data.exotic_weapons) {
+    Object.entries(data.exotic_weapons).forEach(([key, value]) => {
+      sections.push({
+        id: `exotic-${key}`,
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        category: 'exotics',
+        changes: value.changes
+      })
     })
-  })
+  }
+
+  // Exotic weapon changes
+  if (data.exotic_weapon_changes) {
+    Object.entries(data.exotic_weapon_changes).forEach(([key, value]) => {
+      sections.push({
+        id: `exotic-${key}`,
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        category: 'exotics',
+        changes: value.changes
+      })
+    })
+  }
 
   // Abilities (flattened from nested structure)
   function flattenAbilities(obj: any, prefix = ''): void {
@@ -91,7 +146,14 @@ function transformData(data: PatchData): PatchSection[] {
       }
     })
   }
-  flattenAbilities(data.abilities)
+  
+  if (data.abilities) {
+    flattenAbilities(data.abilities)
+  }
+  
+  if (data.ability_changes) {
+    flattenAbilities(data.ability_changes)
+  }
 
   // Exotic armor (flattened from nested structure)
   function flattenExoticArmor(obj: any, classType = ''): void {
@@ -109,7 +171,14 @@ function transformData(data: PatchData): PatchSection[] {
       }
     })
   }
-  flattenExoticArmor(data.exotic_armor)
+  
+  if (data.exotic_armor) {
+    flattenExoticArmor(data.exotic_armor)
+  }
+  
+  if (data.exotic_armor_changes) {
+    flattenExoticArmor(data.exotic_armor_changes)
+  }
 
   return sections
 }
@@ -201,6 +270,8 @@ export default function PatchNotesParser() {
         return <Cpu className="h-4 w-4" />
       case 'armor':
         return <Shield className="h-4 w-4" />
+      case 'features':
+        return <Zap className="h-4 w-4" />
       default:
         return null
     }
@@ -316,6 +387,15 @@ export default function PatchNotesParser() {
                   className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
                 >
                   All
+                </Button>
+                <Button
+                  variant={selectedCategory === 'features' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory('features')}
+                  className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Features
                 </Button>
                 <Button
                   variant={selectedCategory === 'systems' ? 'default' : 'outline'}
@@ -459,6 +539,90 @@ export default function PatchNotesParser() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {section.description && (
+                      <div className="text-slate-300 text-sm leading-relaxed p-3 bg-slate-700/30 rounded-lg">
+                        {section.description}
+                      </div>
+                    )}
+                    
+                    {section.components && (
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-white">Components</h4>
+                        <div className="space-y-3">
+                          {Object.entries(section.components).map(([key, component]: [string, any]) => (
+                            <div key={key} className="bg-slate-700/30 rounded-lg p-4">
+                              <h5 className="font-medium text-white mb-2 capitalize">
+                                {key.replace(/_/g, ' ')}
+                              </h5>
+                              {component.title && (
+                                <p className="text-sm text-slate-300 mb-2">{component.title}</p>
+                              )}
+                              {component.description && (
+                                <p className="text-sm text-slate-400 mb-3">{component.description}</p>
+                              )}
+                              {component.sections && (
+                                <div className="space-y-2">
+                                  {component.sections.map((section: any, idx: number) => (
+                                    <div key={idx} className="bg-slate-600/30 rounded p-3">
+                                      <h6 className="font-medium text-white text-sm mb-2">{section.name}</h6>
+                                      {section.tiers && (
+                                        <div className="space-y-1">
+                                          {section.tiers.map((tier: any, tierIdx: number) => (
+                                            <div key={tierIdx} className="flex justify-between text-xs text-slate-300">
+                                              <span>{tier.name}</span>
+                                              <span>Power: {tier.power}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {section.categories && (
+                                        <div className="space-y-1">
+                                          {section.categories.map((cat: any, catIdx: number) => (
+                                            <div key={catIdx} className="text-xs text-slate-300">
+                                              <span className="font-medium">{cat.name}:</span> {cat.description}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {component.components && (
+                                <div className="space-y-2">
+                                  {component.components.map((comp: any, compIdx: number) => (
+                                    <div key={compIdx} className="bg-slate-600/30 rounded p-3">
+                                      <h6 className="font-medium text-white text-sm mb-1">{comp.name}</h6>
+                                      <p className="text-xs text-slate-300">{comp.description}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {component.tiers && (
+                                <div className="space-y-1">
+                                  {component.tiers.map((tier: any, tierIdx: number) => (
+                                    <div key={tierIdx} className="flex justify-between text-xs text-slate-300 bg-slate-600/30 rounded p-2">
+                                      <span>{tier.difficulty} ({tier.count})</span>
+                                      <span>{tier.reward}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {Array.isArray(component) && (
+                                <div className="space-y-1">
+                                  {component.map((item: string, itemIdx: number) => (
+                                    <div key={itemIdx} className="text-xs text-slate-300 bg-slate-600/30 rounded p-2">
+                                      {item}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="space-y-3">
                       {section.changes.map((change, index) => (
                         <div key={index} className="space-y-2">
@@ -473,6 +637,36 @@ export default function PatchNotesParser() {
                           </div>
                           <div className="text-slate-300 text-sm leading-relaxed ml-1">
                             {change.description}
+                            {change.examples && (
+                              <div className="mt-2 space-y-1">
+                                {change.examples.map((example: string, exampleIdx: number) => (
+                                  <div key={exampleIdx} className="text-xs text-slate-400 bg-slate-700/30 rounded p-2">
+                                    {example}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {change.new_stats && (
+                              <div className="mt-3 space-y-2">
+                                <h6 className="text-sm font-medium text-white">New Stats:</h6>
+                                {Object.entries(change.new_stats).map(([statKey, stat]: [string, any]) => (
+                                  <div key={statKey} className="bg-slate-700/30 rounded p-3">
+                                    <div className="text-sm font-medium text-white capitalize mb-1">
+                                      {statKey.replace(/_/g, ' ')}
+                                    </div>
+                                    <p className="text-xs text-slate-400 mb-2">{stat.description}</p>
+                                    <div className="space-y-1">
+                                      <div className="text-xs text-slate-300">
+                                        <span className="font-medium">1-100:</span> {stat.benefit_1_100}
+                                      </div>
+                                      <div className="text-xs text-slate-300">
+                                        <span className="font-medium">101-200:</span> {stat.benefit_101_200}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
